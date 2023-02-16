@@ -1,2 +1,2 @@
-# PDC
+# PDC - Projeto
 Parallel and Distributed Computing
