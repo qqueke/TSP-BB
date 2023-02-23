@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "/home/qqueke/PDC/PDC---Projeto/queue"
+#include <limits.h>
+//#include "/home/qqueke/PDC/PDC---Projeto/queue"
+#include <string.h>
 
 double Initial_LB(double **Distances, int N){
     double lowerbound = 0;
@@ -16,7 +18,7 @@ double Initial_LB(double **Distances, int N){
                 min1 = Distances[row][column];
             }
             else if (Distances[row][column] >= min1 && Distances[row][column] < min2){
-                min2 = Distances[row][column]
+                min2 = Distances[row][column];
             }
         }
         lowerbound = min1 + min2;
@@ -25,44 +27,46 @@ double Initial_LB(double **Distances, int N){
 }
 
 double Compute_LB(double **Distances, int N, int f, int t, double LB){
+    double cf;
+    double ct;
     double min1 = INT_MAX;
     double min2 = INT_MAX;
 
     //Melhor abordagem parece ser separar os dois for
 
-    row = f;
-    for (column = 0; column < N; column++){
+    int row = f;
+    for (int column = 0; column < N; column++){
         if (Distances[row][column] < min1) {
             min1 = Distances[row][column];
         }
         else if (Distances[row][column] >= min1 && Distances[row][column] < min2){
-            min2 = Distances[row][column]
+            min2 = Distances[row][column];
         }
     }
 
-    if Distances[f][t] >= min2 {
-        double cf = min2;
+    if (Distances[f][t] >= min2) {
+        cf = min2;
     }
     else{
-        double cf = min1;
+        cf = min1;
     }
 
 
     row = t;
-    for (column = 0; column < N; column++){
+    for (int column = 0; column < N; column++){
         if (Distances[row][column] < min1) {
             min1 = Distances[row][column];
         }
         else if (Distances[row][column] >= min1 && Distances[row][column] < min2){
-            min2 = Distances[row][column]
+            min2 = Distances[row][column];
         }
     }
 
-    if Distances[f][t] >= min2 {
-        double ct = min2;
+    if (Distances[f][t] >= min2) {
+        ct = min2;
     }
     else{
-        double ct = min1;
+        ct = min1;
     }
 
     return LB + Distances[f][t] - (cf - ct)/2;
@@ -70,8 +74,32 @@ double Compute_LB(double **Distances, int N, int f, int t, double LB){
 }
 
 void TSPBB(double **Distances, int N, double BestTourCost){
-    Tour = 0; ???
+    
+    //Estas variaveis ainda nem tem tipos certos,  simplesmente nao quis que estivessem
+    //sublinhadas c os erros
+    int row;
+    int Tour[N+1];
+    int newTour[N+1];
+    int BestTour[N+1];
+    for (int row = 0; row < N+1; row++)
+    {
+        if (row == 0){
+            Tour[row] = 0;
+            newTour[row] = 0;
+            BestTour[row] = 0;
+        }
+        else{
+            Tour[row] = -1;
+            newTour[row] = -1;
+            BestTour[row] = -1;
+        }
+    }
+
     double LB = Initial_LB(Distances, N);
+    double newBound;
+    double Cost, newCost, Bound, Length;
+    int Node;
+
     priority_queue_t * Queue = queue_create(Tour, 0, LB, 1, 0);
 
     while (queue_pop(Queue) != NULL){
@@ -82,23 +110,38 @@ void TSPBB(double **Distances, int N, double BestTourCost){
         }
 
         if (Length == N){
-            if Cost + Distances[Node][0] < BestTourCost{
-                BestTour = Tour ???
-                BestTourCost = Cost + Distances[Node][0]
+            if (Cost + Distances[Node][0] < BestTourCost){
+                for (row = 0; row < N; row++){
+                    if (Tour[row] == -1){
+                        break;
+                    }
+                    BestTour[row] = Tour[row];
+                }
+                BestTour[row] = 0;
+                BestTourCost = Cost + Distances[Node][0];
             }
         }
         else{
             //for each neighbor v of Node and v doesnt belong to Tour
             for (int v = 0; v < N; v++){
-                if 
+                //If v is neighbor and doesnt belong to tour then:
                 //Aqui damos update considerando v e Node né?
-                newBound = Compute_LB(Distances, N, Node, v LB);
-                if newBound > BestTourCost{
+                newBound = Compute_LB(Distances, N, Node, v, LB);
+                
+                if (newBound > BestTourCost){
                     continue;
                 }
-                newTour = Tour ???;
+                
+                for (row = 0; row < N; row++){
+                    if (Tour[row] == -1){
+                        break;
+                    }
+                    newTour[row] = Tour[row];
+                }
+
+                newTour[row] = v;
                 newCost = Cost + Distances[Node][v];
-                queue_push(Queue, (newTour, newCost, newBound, Length + 1,v));
+                queue_push(Queue, (newTour, newCost, newBound, Length + 1, v));
             }
         }
     }
@@ -147,46 +190,38 @@ int main(int argc, char *argv[]) {
 
     fclose(fp);
 
+    int BestTour[num_cities];
+    for (int row = 0; row < num_cities; row ++){
+        BestTour[row] = -1;
+    }
+    int BestTourCost;
+
     exec_time = -omp_get_wtime();
+
+    (BestTour, BestTourCost) = TSPBB(Distances, num_cities, max_value);
     
-    (BestTour, BestTourCost) = TSPBB(Distances, int N, double BestTourCost);
     exec_time += omp_get_wtime();
 
     
     fprintf(stderr, "%.1fs\n", exec_time);
 
-    if (BestTourCost > max_value){
-        printf("NO SOLUTION");
+    //This means the graph is disconnected
+    for (int row = num_cities - 1; row >= 0; row --){
+        if (BestTour[row] == -1){
+            printf("NO SOLUTION");
+            break;
+        }
     }
-    else if (graph is disconnected){
+    //No solution that has a better value than the max admited
+    if (BestTourCost > BestTourCost){
         printf("NO SOLUTION");
     }
     else{
         printf("%.1lf\n", BestTourCost);
         for (int row = 0; row < num_cities; row ++){
-            if (BestTour[row] == 0 && row != 0){
-                printf("%d", BestTour[row]);
-                break;
-            }
-            else{
-                printf("%d", BestTour[row]);
-            }
+            printf("%d", BestTour[row]);
         }
     }
-    
-
-
-
-
-
-
-
-
 
     return 0;
-}
-
-
-
-
 }
