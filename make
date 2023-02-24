@@ -1,14 +1,14 @@
-CC = gcc
+CC = g++
 CFLAGS = -O3
-SRC = tsp.cpp queue.c
-OBJ = $(SRC:.c=.o)
+SRC = tsp.cpp
+OBJ = $(SRC:.cpp=.o)
 INCLUDES = -I/home/qqueke/PDC/PDC---Projeto/queue
 LIBS =
 
 tsp: $(OBJ)
 	$(CC) $(CFLAGS) $(INCLUDES) $(LIBS) -o $@ $(OBJ)
 
-%.o: %.c
+%.o: %.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
 
 clean:

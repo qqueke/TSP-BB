@@ -1,10 +1,14 @@
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
 #include <vector>
-#include <iostream>
 #include <climits>
+#include <algorithm>
+#include <cfloat>
+
+#include "/home/qqueke/PDC/PDC---Projeto/queue/queue.hpp"
 
 typedef struct Tour{
     std::vector<int> tour;
@@ -13,23 +17,25 @@ typedef struct Tour{
     int length;
     int current_node;
 
-    friend bool operator>(const Tour& other) const {
+    bool operator>(const Tour& other){
         return bound > other.bound;
     }
 }Tour;
 
 
-double Initial_LB(const std::vector<std::vector<double>>& distances, std::vector<double>& min1, std::vector<double>& min2) {
+double Initial_LB(const std::vector<std::vector<double>>& Distances, std::vector<double>& min1, std::vector<double>& min2) {
     double lowerbound = 0;
 
-    for (int row = 0; row < distances.size(); row++) {
-        for (int column = 0; column < distances.size(); column++) {
-            if (distances[row][column] < min1[row]) {
+
+    //Prov paralelizável com uma soma final de todas as partições
+    for (int row = 0; row < Distances.size(); row++) {
+        for (int column = 0; column < Distances.size(); column++) {
+            if (Distances[row][column] < min1[row]) {
                 min2[row] = min1[row];
-                min1[row] = distances[row][column];
+                min1[row] = Distances[row][column];
             }
-            else if (distances[row][column] >= min1[row] && distances[row][column] < min2[row]) {
-                min2[row] = distances[row][column];
+            else if (Distances[row][column] >= min1[row] && Distances[row][column] < min2[row]) {
+                min2[row] = Distances[row][column];
             }
         }
         lowerbound += min1[row] + min2[row];
@@ -37,18 +43,18 @@ double Initial_LB(const std::vector<std::vector<double>>& distances, std::vector
     return lowerbound / 2;
 }
 
-double Compute_LB(const std::vector<std::vector<double>>& distances, const std::vector<double>& min1, const std::vector<double>& min2, int f, int t, double LB) {
+double Compute_LB(const std::vector<std::vector<double>>& Distances, const std::vector<double>& min1, const std::vector<double>& min2, int f, int t, double LB) {
     double cf = 0;
     double ct = 0;
 
-    if (distances[f][t] >= min2[f]) {
+    if (Distances[f][t] >= min2[f]) {
         cf = min2[f];
     }
     else {
         cf = min1[f];
     }
 
-    if (distances[t][f] >= min2[t]){
+    if (Distances[t][f] >= min2[t]){
         ct = min2[t];
     }
     else {
@@ -89,7 +95,7 @@ Tour TSPBB(const std::vector<std::vector<double>>& Distances, int N, double Best
         }
 
         if (tour.length == N){
-            if (tour.cost + Distances[aux.current_node][0] < BestTour.cost){
+            if (tour.cost + Distances[tour.current_node][0] < BestTour.cost){
                 BestTour.tour = tour.tour;
                 BestTour.tour[tour.tour.size()] = 0;
                 BestTour.cost = tour.cost + Distances[tour.current_node][0];
@@ -99,7 +105,17 @@ Tour TSPBB(const std::vector<std::vector<double>>& Distances, int N, double Best
             //for each neighbor v of Node and v doesnt belong to Tour
             for (int v = 0; v < N; v++){
                 //If v is neighbor and doesnt belong to tour then:
-                //Aqui damos update considerando v e Node né?
+                //If it belongs to tour quit
+
+                //Trocar por loop paralelizável
+                if (std::find(tour.tour.begin(), tour.tour.end(), v) != tour.tour.end()) {
+                    continue;
+                }
+                //If it is not a neighbot quit
+                if (Distances[tour.current_node][v] == DBL_MAX){
+                    continue;
+                }
+
                 newTour.bound = Compute_LB(Distances, min1, min2, tour.current_node, v, tour.bound);
                 
                 if (newTour.bound > BestTour.cost){
@@ -141,6 +157,14 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::vector<double>> Distances (num_cities, std::vector<double>(num_cities));
     
+
+
+    for (int row = 0; row < num_cities; row++) {
+        for (int column = 0; column < num_cities; column++) {
+            Distances[row][column] = DBL_MAX;
+        }
+    }
+
     for (int row = 0; row < num_roads; row++) {
         int city1, city2;
         double distance;
@@ -151,11 +175,11 @@ int main(int argc, char *argv[]) {
 
     fclose(fp);
 
-    exec_time = -omp_get_wtime();
+    //exec_time = -omp_get_wtime();
 
     Tour BestTour = TSPBB(Distances, num_cities, max_value);
     
-    exec_time += omp_get_wtime();
+    //exec_time += omp_get_wtime();
 
     
     fprintf(stderr, "%.1fs\n", exec_time);
@@ -178,60 +202,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-/*
-
-double TSPBB(const std::vector<std::vector<double>>& distances) {
-    int n = distances.size();
-    std::vector<int> perm(n);
-    std::iota(perm.begin(), perm.end(), 0);
-    double best_dist = std::numeric_limits<double>::infinity();
-    std::vector<int> best_perm;
-
-    // Compute lower bound using the initial lower bound function.
-    double LB = Initial_LB(distances);
-
-    // Create a priority queue to store nodes in the search tree.
-    std::priority_queue<Node, std::vector<Node>, NodeComparator> pq;
-
-    // Initialize the search tree with the root node.
-    pq.push(Node(0, perm, LB));
-
-    while (!pq.empty()) {
-        // Get the node with the highest priority.
-        Node curr_node = pq.top();
-        pq.pop();
-
-        // If the lower bound of this node is worse than the current best distance, prune this branch.
-        if (curr_node.LB >= best_dist) {
-            continue;
-        }
-
-        // If the current node is a leaf node, update the best distance and permutation.
-        if (curr_node.level == n) {
-            double curr_dist = Compute_Distance(distances, curr_node.perm);
-            if (curr_dist < best_dist) {
-                best_dist = curr_dist;
-                best_perm = curr_node.perm;
-            }
-            continue;
-        }
-
-        // Branch on all possible next cities.
-        for (int i = curr_node.level; i < n; i++) {
-            std::vector<int> child_perm = curr_node.perm;
-            std::swap(child_perm[curr_node.level], child_perm[i]);
-
-            // Compute the lower bound for the child node using the Compute_LB function.
-            double child_LB = Compute_LB(distances, curr_node.min1, curr_node.min2, curr_node.level, i, curr_node.LB);
-
-            // Add the child node to the priority queue.
-            pq.push(Node(curr_node.level + 1, child_perm, child_LB, curr_node.min1, curr_node.min2));
-        }
-    }
-
-    return best_dist;
-}
-
-
-
-*/
