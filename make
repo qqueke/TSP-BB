@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O3
-SRC = tsp.c queue.c
+SRC = tsp.cpp queue.c
 OBJ = $(SRC:.c=.o)
 INCLUDES = -I/home/qqueke/PDC/PDC---Projeto/queue
 LIBS =
