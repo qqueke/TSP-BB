@@ -1,14 +1,24 @@
 CC = g++
 CFLAGS = -O3
-SRC = tsp.cpp
+SRC = tsp.cpp tsp-omp.cpp
 OBJ = $(SRC:.cpp=.o)
 LIBS =
 
-tsp: $(OBJ)
-	$(CC) $(CFLAGS) $(INCLUDES) $(LIBS) -o $@ $(OBJ)
+all: tsp tsp-omp
 
-%.o: %.cpp
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+tsp: tsp.o
+	$(CC) $(CFLAGS) $(INCLUDES) $(LIBS) -fopenmp -o $@ tsp.o
+
+tsp-omp: tsp-omp.o
+	$(CC) $(CFLAGS) $(INCLUDES) $(LIBS) -fopenmp -o $@ tsp-omp.o
+
+tsp.o: tsp.cpp
+	$(CC) $(CFLAGS) $(INCLUDES) -fopenmp -c -o $@ $<
+
+tsp-omp.o: tsp-omp.cpp
+	$(CC) $(CFLAGS) $(INCLUDES) -fopenmp -c -o $@ $<
+
+.PHONY: all
 
 clean:
-	rm -f tsp $(OBJ)
+	rm -f tsp tsp-omp $(OBJ)

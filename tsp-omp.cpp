@@ -1,13 +1,17 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <vector>
 #include <omp.h>
+#include <limits.h>
+#include <string.h>
+#include <vector>
 #include <climits>
 #include <algorithm>
 #include <cfloat>
 #include "queue.hpp"
 
+
+// #pragma omp for reduction(+: NodesNoOutEdges) schedule(dynamic,64)
 void print_tour(const Tour& tour) {
     std::cout << "Tour: {";
     for (int i : tour.tour) {
@@ -19,21 +23,42 @@ void print_tour(const Tour& tour) {
 double Initial_LB(const std::vector<std::vector<double>> &Distances, std::vector<double> &min1, std::vector<double> &min2)
 {
     double lowerbound = 0;
-
-
-    //Prov paralelizável com uma soma final de todas as partições
-    for (int row = 0; row < Distances.size(); row++) {
-        for (int column = 0; column < Distances.size(); column++) {
-            if (Distances[row][column] < min1[row]) {
-                min2[row] = min1[row];
-                min1[row] = Distances[row][column];
-            }
-            else if (Distances[row][column] >= min1[row] && Distances[row][column] < min2[row]) {
-                min2[row] = Distances[row][column];
-            }
+    //Este threshold é a partir do qual vale a pena o overhead de criar threads 
+    int threshold = 100;
+    
+    //Parallel
+    if (Distances.size() > threshold){
+        #pragma omp parallel for reduction(+: lowerbound) schedule(dynamic,64)
+            for (int row = 0; row < Distances.size(); row++) {
+                #pragma omp parallel for schedule(dynamic,64)
+                for (int column = 0; column < Distances.size(); column++) {
+                    if (Distances[row][column] < min1[row]) {
+                        min2[row] = min1[row];
+                        min1[row] = Distances[row][column];
+                    }
+                    else if (Distances[row][column] >= min1[row] && Distances[row][column] < min2[row]) {
+                        min2[row] = Distances[row][column];
+                    }
+                }
+            lowerbound += min1[row] + min2[row];
         }
-        lowerbound += min1[row] + min2[row];
     }
+    //Serial
+    else{
+        for (int row = 0; row < Distances.size(); row++) {
+            for (int column = 0; column < Distances.size(); column++) {
+                if (Distances[row][column] < min1[row]) {
+                    min2[row] = min1[row];
+                    min1[row] = Distances[row][column];
+                }
+                else if (Distances[row][column] >= min1[row] && Distances[row][column] < min2[row]) {
+                    min2[row] = Distances[row][column];
+                }
+            }
+            lowerbound += min1[row] + min2[row];
+        }
+    }
+
     return lowerbound / 2;
 }
 
@@ -63,8 +88,8 @@ double Compute_LB(const std::vector<std::vector<double>>& Distances, const std::
 Tour TSPBB(const std::vector<std::vector<double>>& Distances, int N, double BestTourCost){
 
     //Lowerbound vectors for min1 and min2
-    std::vector<double> min1(Distances.size(), INT_MAX);
-    std::vector<double> min2(Distances.size(), INT_MAX);
+    std::vector<double> min1(N, INT_MAX);
+    std::vector<double> min2(N, INT_MAX);
     
     //Priority queue
     PriorityQueue<Tour> queue;
