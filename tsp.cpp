@@ -8,7 +8,13 @@
 #include <algorithm>
 #include <cfloat>
 #include "queue.hpp"
-
+void print_tour(const Tour& tour) {
+    std::cout << "Tour: { ";
+    for (int i : tour.tour) {
+        std::cout << i << ", ";
+    }
+    std::cout << "}, Current Node: " << tour.current_node << ", Tour cost: " << tour.cost << ", Tour Lowerbound: " << tour.bound << std::endl;
+}
 
 double Initial_LB(const std::vector<std::vector<double>> &Distances, std::vector<double> &min1, std::vector<double> &min2)
 {
@@ -55,7 +61,7 @@ double Compute_LB(const std::vector<std::vector<double>>& Distances, const std::
 }
 
 Tour TSPBB(const std::vector<std::vector<double>>& Distances, int N, double BestTourCost){
-    
+
     //Lowerbound vectors for min1 and min2
     std::vector<double> min1(Distances.size(), INT_MAX);
     std::vector<double> min2(Distances.size(), INT_MAX);
@@ -72,14 +78,15 @@ Tour TSPBB(const std::vector<std::vector<double>>& Distances, int N, double Best
     printf("Current node: %d\n", initialTour.current_node);   
     printf("Lowerbound: %.1lf\n", initialTour.bound);
     queue.push(initialTour); //Queue ← (Tour, 0, LB, 1, 0) (Tour, Cost, Bound, Length, Current city)
-    
-    
+    std::cout << "Push:\n";
+    queue.print(&print_tour);
     BestTour.tour.push_back(0);
     BestTour.cost = BestTourCost;
 
     while (!queue.empty()){ //while Queue ̸= {} do
         initialTour = queue.pop(); // (Tour, Cost, Bound, Length, N ode) ← Queue.pop()
-        
+        std::cout << "Pop:\n";
+        queue.print(&print_tour);
         if (initialTour.bound >= BestTour.cost){// if Bound ≥ BestT ourCost then
             return BestTour; // return BestT our, BestT ourCost
         }// end if
@@ -122,7 +129,8 @@ Tour TSPBB(const std::vector<std::vector<double>>& Distances, int N, double Best
                 initialTour.cost = initialTour.cost + Distances[initialTour.current_node][v]; //newCost ← cost + Distances(N ode, v)
                 initialTour.current_node = v;
                 queue.push(initialTour); //Queue.add((newTour, newCost, newBound, Length + 1, v)), v is the new current node
-                
+                std::cout << "Push:\n";
+                queue.print(&print_tour);
             }//end for
         }//end if
     }//end while

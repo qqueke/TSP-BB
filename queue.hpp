@@ -4,9 +4,11 @@
 	This file is part of the tsp library, which is licensed under 
 	the terms contained in the LICENSE file.
  **************************************************************************/
+
 #ifndef _TSP_QUEUE_HPP
 #define _TSP_QUEUE_HPP
-
+#include <vector>
+#include <stdio.h> 
 // A queue where the elements are stored in an increasing order.
 // This implementation uses a binary heap.
 //
@@ -33,9 +35,11 @@ typedef struct Tour{
 
     friend bool operator>(const Tour& self, const Tour& other){
         if (self.bound != other.bound) {
+			//printf("Current node bound: %.1lf, other bound: %.1lf\n", self.bound, other.bound);
             return self.bound > other.bound;
         }
         else {
+			//printf("Current node: %d, other node: %d\n", self.current_node, other.current_node);
             return self.current_node > other.current_node;
         }
     }
