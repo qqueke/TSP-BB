@@ -34,14 +34,12 @@ typedef struct Tour{
     int current_node;
 
     friend bool operator>(const Tour& self, const Tour& other){
-        if (self.bound != other.bound) {
-			//printf("Current node bound: %.1lf, other bound: %.1lf\n", self.bound, other.bound);
+        if (self.bound != other.bound){
             return self.bound > other.bound;
-        }
-        else {
-			//printf("Current node: %d, other node: %d\n", self.current_node, other.current_node);
+		}
+        else{ 
             return self.current_node > other.current_node;
-        }
+		}
     }
 }Tour;
 
