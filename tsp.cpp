@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 
     for (int row = 0; row < num_cities; row++) {
         for (int column = 0; column < num_cities; column++) {
-            Distances[row][column] = DBL_MAX;
+            Distances[row][column] = INT_MAX;
         }
     }
 
