@@ -27,3 +27,5 @@ double Serial_first_lbound(const std::vector<std::vector<double>> &distances, st
 double Parallel_first_lbound(const std::vector<std::vector<double>> &distances, std::vector<std::vector<double>> &min);
 
 Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost);
+
+Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost);

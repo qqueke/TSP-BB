@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
     exec_time = -omp_get_wtime();
 
-    Tour BestTour = Serial_tsp_bb(Distances, num_cities, max_value);
+    Tour BestTour = Parallel_tsp_bb(Distances, num_cities, max_value);
     
     exec_time += omp_get_wtime();
 
