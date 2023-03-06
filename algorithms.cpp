@@ -16,10 +16,10 @@ void print_tour(const Tour& tour) {
     for (int i : tour.tour) {
         std::cout << i << " ";
     }
-    std::cout << "}, Current Node: " << tour.current_node << ", Tour cost: " << tour.cost << ", Tour Lowerbound: " << tour.bound << std::endl;
+    std::cout << "}, Current Node: " << tour.tour.back() << ", Tour cost: " << tour.cost << ", Tour Lowerbound: " << tour.bound << std::endl;
 }
 
-double compute_lbound(const std::vector<std::vector<double>>& distances, std::vector<std::vector<double>> &min, int f, int t, double LB) {
+double Serial_compute_lbound(const std::vector<std::vector<double>>& distances, std::vector<std::vector<double>> &min, int f, int t, double LB) {
     double cf = 0;
     double ct = 0;
 
@@ -84,7 +84,7 @@ double Parallel_first_lbound(const std::vector<std::vector<double>> &distances, 
     return lowerbound / 2;
 }
 
-Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost){
+Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value){
 
     //Lowerbound vectors for min1 and min2
     std::vector<std::vector<double>> min (N, std::vector<double>(2));
@@ -95,33 +95,34 @@ Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, dou
         }
     }
 
-
     //Priority queue
     PriorityQueue<Tour> queue;
+
     //Tours include the path, cost, bound and the current node
-    Tour initialTour, BestTour, newTour;
+    Tour tour, best_tour, new_tour;
 
-    initialTour.tour.push_back(0); // Tour ← {0}
-    initialTour.cost = 0; // Tour Cost <- 0
-    initialTour.bound = Serial_first_lbound(distances, min); //Tour lowerbound <- Initial lowerbound guess
-    initialTour.current_node = 0; //Tour current node  <- 0
-    queue.push(initialTour); //Queue ← (Tour, 0, LB, 1, 0) (Tour, Cost, Bound, Length, Current city)
 
-    BestTour.tour.push_back(0);
-    BestTour.cost = BestTourCost;
+    tour.tour.push_back(0); // Tour ← {0}
+    tour.cost = 0; // Tour Cost <- 0
+    tour.bound = Serial_first_lbound(distances, min); //Tour lowerbound <- Initial lowerbound guess
+    //tour.current_node = 0; //Tour current node  <- 0
+    queue.push(tour); //Queue ← (Tour, 0, LB, 1, 0) (Tour, Cost, Bound, Length, Current city)
+
+    best_tour.tour.push_back(0);
+    best_tour.cost = max_value;
 
     while (!queue.empty()){ //while Queue ̸= {} do
-        initialTour = queue.pop(); // (Tour, Cost, Bound, Length, N ode) ← Queue.pop()
+        tour = queue.pop(); // (Tour, Cost, Bound, Length, N ode) ← Queue.pop()
 
-        if (initialTour.bound >= BestTour.cost){// if Bound ≥ BestT ourCost then
-            return BestTour; // return BestT our, BestT ourCost
+        if (tour.bound >= best_tour.cost){// if Bound ≥ BestT ourCost then
+            return best_tour; // return BestT our, BestT ourCost
         }
 
-        if (initialTour.tour.size() == N){ // if Length = N then
-            if (initialTour.cost + distances[initialTour.current_node][0] < BestTour.cost){ // if Cost + distances(Node, 0) < BestTourCost then
-                BestTour.tour = initialTour.tour; // BestTour ← Tour ∪ {0}
-                BestTour.tour.push_back(0); // BestTour ← Tour ∪ {0}
-                BestTour.cost = initialTour.cost + distances[initialTour.current_node][0];//BestT ourCost ← Cost + distances(N ode, 0)
+        if (tour.tour.size() == N){ // if Length = N then
+            if (tour.cost + distances[tour.tour.back()][0] < best_tour.cost){ // if Cost + distances(Node, 0) < best_tourCost then
+                best_tour.tour = tour.tour; // best_tour ← Tour ∪ {0}
+                best_tour.tour.push_back(0); // best_tour ← Tour ∪ {0}
+                best_tour.cost = tour.cost + distances[tour.tour.back()][0];//BestT ourCost ← Cost + distances(N ode, 0)
             } 
         }
         else{
@@ -129,32 +130,31 @@ Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, dou
             for (int v = 0; v < N; v++){
                 //If v is neighbor and doesnt belong to tour then:
                 //If it is not a neighbor quit
-                if (distances[initialTour.current_node][v] == INT_MAX){
+                if (distances[tour.tour.back()][v] == INT_MAX){
                     continue;
                 }
 
                 //This find method will be replaced
                 //If it already belongs to tour quit
-                if (std::find(initialTour.tour.begin(), initialTour.tour.end(), v) != initialTour.tour.end()) {
+                if (std::find(tour.tour.begin(), tour.tour.end(), v) != tour.tour.end()) {
                     continue;
                 }
 
                 //newBound ← updated lower bound on tour cost
-                newTour.bound = compute_lbound(distances, min, initialTour.current_node, v, initialTour.bound);
-                //initialTour.bound = compute_lbound(distances, min1, min2, initialTour.current_node, v, initialTour.bound);
-
-                if (newTour.bound > BestTour.cost){ //if newBound > BestT ourCost then
+                new_tour.bound = Serial_compute_lbound(distances, min, tour.tour.back(), v, tour.bound);
+                
+                if (new_tour.bound > best_tour.cost){ //if newBound > BestT ourCost then
                     continue;
                 }
 
-                newTour.tour = initialTour.tour;
-                newTour.tour.push_back(v); // newTour ← Tour ∪ {v}
-                newTour.cost = initialTour.cost + distances[initialTour.current_node][v]; //newCost ← cost + distances(N ode, v)
-                newTour.current_node = v;
-                queue.push(newTour); //Queue.add((newTour, newCost, newBound, Length + 1, v)), v is the new current node
+                new_tour.tour = tour.tour;
+                new_tour.tour.push_back(v); // new_tour ← Tour ∪ {v}
+                new_tour.cost = tour.cost + distances[tour.tour.back()][v]; //newCost ← cost + distances(N ode, v)
+                //new_tour.current_node = v;
+                queue.push(new_tour); //Queue.add((new_tour, newCost, newBound, Length + 1, v)), v is the new current node
             }//end for
         }//end if
     }//end while
-    return BestTour;
+    return best_tour;
 }//end procedure
 
