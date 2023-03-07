@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 
     for (int row = 0; row < num_cities; row++) {
         for (int column = 0; column < num_cities; column++) {
-            Distances[row][column] = DBL_MAX;
+            Distances[row][column] = INT_MAX;
         }
     }
 
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
     exec_time = -omp_get_wtime();
 
-    Tour BestTour = Parallel_tsp_bb(Distances, num_cities, max_value);
+    Tour BestTour = Parallel2_tsp_bb(Distances, num_cities, max_value);
     
     exec_time += omp_get_wtime();
 
