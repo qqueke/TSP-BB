@@ -9,7 +9,6 @@ typedef struct Tour{
     double cost;
     double bound;
     
-
     friend bool operator>(const Tour& self, const Tour& other){
         if (self.bound != other.bound) {
             return self.bound > other.bound;
@@ -28,7 +27,7 @@ double Serial_first_lbound(const std::vector<std::vector<double>> &distances, st
 
 double Parallel_first_lbound(const std::vector<std::vector<double>> &distances, std::vector<std::vector<double>> &min);
 
-Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost);
+Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors);
 
 Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost);
 

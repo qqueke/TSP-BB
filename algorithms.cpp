@@ -19,36 +19,40 @@ void print_tour(const Tour& tour) {
 double Serial_compute_lbound(const std::vector<std::vector<double>>& distances, std::vector<std::vector<double>> &min, int f, int t, double LB) {
     double cf = 0;
     double ct = 0;
+    double dist = distances[f][t];
 
-    if (distances[f][t] >= min[f][1]) {
+    if (dist >= min[f][1]) {
         cf = min[f][1];
     }
     else {
         cf = min[f][0];
     }
 
-    if (distances[t][f] >= min[t][1]){
+    if (dist >= min[t][1]){
         ct = min[t][1];
     }
     else {
         ct = min[t][0];
     }
 
-    double lower_bound = LB + distances[f][t] - (cf + ct)/2;
+    double lower_bound = LB + dist - (cf + ct)/2;
 
     return lower_bound;
 }
 
 double Serial_first_lbound(const std::vector<std::vector<double>> &distances, std::vector<std::vector<double>> &min)
 {
+    //double dist;
     double lowerbound = 0;
 
     for (int row = 0; row < distances.size(); row++) {
         for (int column = 0; column < distances[row].size(); column++) {
+            //dist = distances[row][column];
             if (distances[row][column] < min[row][0]) {
                 min[row][1] = min[row][0];
                 min[row][0] = distances[row][column];
             }
+
             else if (distances[row][column] >= min[row][0] && distances[row][column] < min[row][1]) {
                 min[row][1] = distances[row][column];
             }
@@ -87,27 +91,21 @@ double Parallel_first_lbound(const std::vector<std::vector<double>> &distances, 
     return lowerbound / 2;
 }
 
-Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value){
-
+Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value, const std::vector<std::vector<int>> &neighbors){
+    double dist;
     //Lowerbound vectors for min1 and min2
-    std::vector<std::vector<double>> min (N, std::vector<double>(2));
-
-    for (int row = 0; row < N; row++) {
-        for (int column = 0; column < 2; column++) {
-            min[row][column] = INT_MAX;
-        }
-    }
+    std::vector<std::vector<double>> min (N, std::vector<double>(2, INT_MAX));
 
     //Priority queue
     PriorityQueue<Tour> queue;
     
-
+    int neighbor;
     //Tours include the path, cost and bound
     Tour tour, best_tour, new_tour;
-
+    tour.bound = Serial_first_lbound(distances, min);
     tour.tour.push_back(0); // Tour ← {0}
     tour.cost = 0; // Tour Cost <- 0
-    tour.bound = Serial_first_lbound(distances, min); //Tour lowerbound <- Initial lowerbound guess
+     //Tour lowerbound <- Initial lowerbound guess
     queue.push(tour); //Queue ← (Tour, 0, LB, 1, 0) (Tour, Cost, Bound, Length, Current city)
 
     best_tour.tour.push_back(0);
@@ -121,37 +119,33 @@ Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, dou
         }
 
         if (tour.tour.size() == N){ // if Length = N then
-            if (tour.cost + distances[tour.tour.back()][0] < best_tour.cost){ // if Cost + distances(Node, 0) < best_tourCost then
+            dist = distances[tour.tour.back()][0];
+            if (tour.cost + dist < best_tour.cost){ // if Cost + distances(Node, 0) < best_tourCost then
                 best_tour.tour = tour.tour; // best_tour ← Tour ∪ {0}
                 best_tour.tour.push_back(0); // best_tour ← Tour ∪ {0}
-                best_tour.cost = tour.cost + distances[tour.tour.back()][0];//BestT ourCost ← Cost + distances(N ode, 0)
+                best_tour.cost = tour.cost + dist;//BestT ourCost ← Cost + distances(N ode, 0)
             } 
         }
         else{
             //for each neighbor v of Node and v ̸∈ Tour do
-            for (int v = 0; v < N; v++){
-                //If v is neighbor and doesnt belong to tour then:
-                //If it is not a neighbor quit
-                if (distances[tour.tour.back()][v] == INT_MAX){
-                    continue;
-                }
+            for (int v = 0; v < neighbors[tour.tour.back()].size(); v++){
+                neighbor = neighbors[tour.tour.back()][v];
 
-                //This find method will be replaced
                 //If it already belongs to tour quit
-                if (std::find(tour.tour.begin(), tour.tour.end(), v) != tour.tour.end()) {
+                if (std::find(tour.tour.begin(), tour.tour.end(), neighbor) != tour.tour.end()) {
                     continue;
                 }
 
                 //newBound ← updated lower bound on tour cost
-                new_tour.bound = Serial_compute_lbound(distances, min, tour.tour.back(), v, tour.bound);
+                new_tour.bound = Serial_compute_lbound(distances, min, tour.tour.back(), neighbor, tour.bound);
                 
                 if (new_tour.bound > best_tour.cost){ //if newBound > BestT ourCost then
                     continue;
                 }
 
                 new_tour.tour = tour.tour;
-                new_tour.tour.push_back(v); // new_tour ← Tour ∪ {v}
-                new_tour.cost = tour.cost + distances[tour.tour.back()][v]; //newCost ← cost + distances(N ode, v)
+                new_tour.tour.push_back(neighbor); // new_tour ← Tour ∪ {v}
+                new_tour.cost = tour.cost + distances[tour.tour.back()][neighbor]; //newCost ← cost + distances(N ode, v)
                 queue.push(new_tour); //Queue.add((new_tour, newCost, newBound, Length + 1, v)), v is the new current node
             }//end for
         }//end if

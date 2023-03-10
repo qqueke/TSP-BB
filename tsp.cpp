@@ -5,7 +5,6 @@
 #include <omp.h>
 #include <climits>
 #include <algorithm>
-#include <cfloat>
 #include "queue.hpp"
 #include "algorithms.hpp"
 
@@ -33,7 +32,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::vector<std::vector<double>> Distances (num_cities, std::vector<double>(num_cities));
-    
+    std::vector<std::vector<int>> neighbors(num_cities);
 
 
     for (int row = 0; row < num_cities; row++) {
@@ -51,13 +50,15 @@ int main(int argc, char *argv[]) {
         }
         Distances[city1][city2] = distance;
         Distances[city2][city1] = distance;
+        neighbors[city1].push_back(city2);
+        neighbors[city2].push_back(city1);
     }
 
     fclose(fp);
 
     exec_time = -omp_get_wtime();
 
-    Tour BestTour = Serial_tsp_bb(Distances, num_cities, max_value);
+    Tour BestTour = Serial_tsp_bb(Distances, num_cities, max_value, neighbors);
     
     exec_time += omp_get_wtime();
 
