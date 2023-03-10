@@ -113,8 +113,11 @@ Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, dou
 
     while (!queue.empty()){ //while Queue ̸= {} do
         tour = queue.pop(); // (Tour, Cost, Bound, Length, N ode) ← Queue.pop()
-
-        if (tour.bound >= best_tour.cost){// if Bound ≥ BestT ourCost then
+        
+        if (tour.bound >= best_tour.cost)
+        { // if Bound ≥ BestT ourCost then
+            // queue.clear();
+            
             return best_tour; // return BestT our, BestT ourCost
         }
 
@@ -150,6 +153,7 @@ Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, dou
             }//end for
         }//end if
     }//end while
+    //queue.clear();
     return best_tour;
 }//end procedure
 
