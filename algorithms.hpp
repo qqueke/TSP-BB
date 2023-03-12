@@ -29,6 +29,6 @@ double Parallel_first_lbound(const std::vector<std::vector<double>> &distances, 
 
 Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors);
 
-Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost);
+Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors);
 
-Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost);
+Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors);

@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     exec_time += omp_get_wtime();
 
     fprintf(stderr, "%lfs\n", exec_time);
-
+    best_tour.tour.shrink_to_fit();
     //No solution that has a better value than the max admited
     if (best_tour.cost > max_value){
         std::cout << "NO SOLUTION";
@@ -75,8 +75,8 @@ int main(int argc, char *argv[]) {
     else{
         std::cout << best_tour.cost << std::endl;
 
-        for (int i : best_tour.tour) {
-            std::cout << i << " ";
+        for (int i = 0; i<best_tour.tour.size(); i++) {
+            std::cout << best_tour.tour[i] << " ";
         }
         std::cout << std::endl;
     }
