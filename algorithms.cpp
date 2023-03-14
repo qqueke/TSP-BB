@@ -8,6 +8,7 @@
 #include "algorithms.hpp"
 
 
+
 //This is a print function to help with the queue.print
 void print_tour(const Tour& tour) {
     std::cout << "Tour: ";
@@ -76,7 +77,7 @@ double Parallel_first_lbound(const std::vector<std::vector<double>> &distances, 
     {
         double private_lb = 0;
 
-        #pragma omp for collapse(2) 
+        #pragma omp for
         for (int row = 0; row < distances.size(); row++) {
             double min1 = INT_MAX;
             double min2 = INT_MAX;
@@ -195,9 +196,13 @@ Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, d
 
     #pragma omp parallel
     {
+        int total_td = omp_get_num_threads();
+        std::cout << "Total number of threads: " << total_td << std::endl;
         int neighbor;
+        int total_tdm = omp_get_max_threads();
+        std::cout << "Max number of threads: " << total_tdm << std::endl;
 
-        #pragma omp for private(new_tour) nowait
+        #pragma omp for private(new_tour) 
         for (int v = 0; v < neighbors[tour.tour.back()].size(); v++){
             neighbor = neighbors[tour.tour.back()][v];
             
@@ -222,7 +227,114 @@ Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, d
             queues.push_back(queue);
         }
 
-        #pragma omp for private(tour, new_tour) nowait
+        #pragma omp for private(tour, new_tour) 
+        for (int i = 0; i < queues.size(); i++){
+            while (!queues[i].empty()){ 
+                tour = queues[i].pop(); 
+                double distance = distances[0][tour.tour.back()];
+
+                if (tour.bound >= best_tour.cost){
+                    break;
+                }
+
+                if (tour.tour.size() == N){
+                    #pragma omp critical
+                    {
+                        if (tour.cost + distance < best_tour.cost){ 
+                                best_tour.tour = tour.tour; 
+                                best_tour.tour.push_back(0); 
+                                best_tour.cost = tour.cost + distance;
+                            }
+                    } 
+                }
+                else{
+                    for (int v = 0; v < neighbors[tour.tour.back()].size(); v++){
+                        neighbor = neighbors[tour.tour.back()][v];
+
+                        if (std::find(tour.tour.begin(), tour.tour.end(), neighbor) != tour.tour.end()) {
+                            continue;
+                        }
+
+                        new_tour.bound = Serial_compute_lbound(distances, min, tour.tour.back(), neighbor, tour.bound);
+                        
+                        if (new_tour.bound > best_tour.cost){ 
+                            continue;
+                        }
+
+                        new_tour.tour = tour.tour;
+                        new_tour.tour.push_back(neighbor); 
+                        new_tour.cost = tour.cost + distances[tour.tour.back()][neighbor]; 
+                        
+                        queues[i].push(new_tour); 
+                    }
+                }
+            }
+        }
+        
+        
+    }
+    return best_tour;
+}
+
+Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value, const std::vector<std::vector<int>> &neighbors){
+    
+       int index = 0;
+    double min_cost;
+    //---------------------------------Shared variables -----------------------------------
+
+    std::vector<std::vector<double>> min (N, std::vector<double>(2));
+    
+    std::vector<PriorityQueue<Tour>> queues;
+
+    Tour tour, best_tour, new_tour;
+    std::vector<Tour> best_tours;
+
+    //--------------------Setting tours information -----------------------------------------
+    tour.tour.push_back(0); 
+    tour.cost = 0; 
+    tour.bound = Parallel_first_lbound(distances, min); 
+
+    best_tour.tour.push_back(0);
+    best_tour.cost = max_value;
+    //--------------------------------------------------------------------------------------
+
+    if (tour.bound >= best_tour.cost){
+        return best_tour; 
+    }
+
+
+        int total_td = omp_get_num_threads();
+        std::cout << "Total number of threads: " << total_td << std::endl;
+        int neighbor;
+        int total_tdm = omp_get_max_threads();
+        std::cout << "Max number of threads: " << total_tdm << std::endl;
+
+        #pragma omp parallel for private(new_tour) 
+        for (int v = 0; v < neighbors[tour.tour.back()].size(); v++){
+            neighbor = neighbors[tour.tour.back()][v];
+            
+            PriorityQueue<Tour> queue;
+
+            if (std::find(tour.tour.begin(), tour.tour.end(), neighbor) != tour.tour.end()) {
+                continue;
+            }
+
+            new_tour.bound = Serial_compute_lbound(distances, min, tour.tour.back(), neighbor, tour.bound);
+            
+            if (new_tour.bound > max_value){ 
+                continue;
+            }
+
+            new_tour.tour = tour.tour;
+            new_tour.tour.push_back(neighbor); 
+            new_tour.cost = tour.cost + distances[tour.tour.back()][neighbor];
+            queue.push(new_tour);
+
+            //#pragma omp atomic
+            queues.push_back(queue);
+        }
+
+        #pragma omp parallel for private(tour, new_tour) 
         for (int i = 0; i < queues.size(); i++){
             while (!queues[i].empty()){ 
                 tour = queues[i].pop(); 
@@ -267,104 +379,5 @@ Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, d
         }
         
         return best_tour;
-    }
-}
-
-Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value, const std::vector<std::vector<int>> &neighbors){
     
-    int index = 0;
-    double min_cost;
-    //---------------------------------Shared variables -----------------------------------
-
-    std::vector<std::vector<double>> min (N, std::vector<double>(2));
-    
-    //std::vector<PriorityQueue<Tour>> queues;
-
-    Tour tour, best_tour, new_tour;
-    //std::vector<Tour> best_tours;
-
-    //--------------------Setting tours information -----------------------------------------
-    tour.tour.push_back(0); 
-    tour.cost = 0; 
-    tour.bound = Parallel_first_lbound(distances, min); 
-
-    best_tour.tour.push_back(0);
-    best_tour.cost = max_value;
-    //--------------------------------------------------------------------------------------
-
-    if (tour.bound >= best_tour.cost){
-        return best_tour; 
-    }
-
-    #pragma omp parallel private(tour, new_tour)
-    {
-        int neighbor;
-        PriorityQueue<Tour> queue;
-
-        #pragma omp for nowait
-        for (int v = 0; v < neighbors[tour.tour.back()].size(); v++){
-            neighbor = neighbors[tour.tour.back()][v];
-            
-            
-
-            if (std::find(tour.tour.begin(), tour.tour.end(), neighbor) != tour.tour.end()) {
-                continue;
-            }
-
-            new_tour.bound = Serial_compute_lbound(distances, min, tour.tour.back(), neighbor, tour.bound);
-            
-            if (new_tour.bound > max_value){ 
-                continue;
-            }
-
-            new_tour.tour = tour.tour;
-            new_tour.tour.push_back(neighbor); 
-            new_tour.cost = tour.cost + distances[tour.tour.back()][neighbor];
-            queue.push(new_tour);
-
-        }
-
-            while (queue.empty()){ 
-                tour = queue.pop(); 
-                double distance = distances[0][tour.tour.back()];
-
-                if (tour.bound >= best_tour.cost){
-                    break;
-                }
-
-                if (tour.tour.size() == N){
-                    #pragma omp critical
-                    {
-                        if (tour.cost + distance < best_tour.cost){ 
-                                best_tour.tour = tour.tour; 
-                                best_tour.tour.push_back(0); 
-                                best_tour.cost = tour.cost + distance;
-                            }
-                    } 
-                }
-                else{
-                    #pragma omp for nowait
-                    for (int v = 0; v < neighbors[tour.tour.back()].size(); v++){
-                        neighbor = neighbors[tour.tour.back()][v];
-
-                        if (std::find(tour.tour.begin(), tour.tour.end(), neighbor) != tour.tour.end()) {
-                            continue;
-                        }
-
-                        new_tour.bound = Serial_compute_lbound(distances, min, tour.tour.back(), neighbor, tour.bound);
-                        
-                        if (new_tour.bound > best_tour.cost){ 
-                            continue;
-                        }
-
-                        new_tour.tour = tour.tour;
-                        new_tour.tour.push_back(neighbor); 
-                        new_tour.cost = tour.cost + distances[tour.tour.back()][neighbor]; 
-                        queue.push(new_tour); 
-                    }
-                }
-            }
-        }
-        
-        return best_tour;
     }

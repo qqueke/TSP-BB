@@ -62,29 +62,29 @@ int main(int argc, char *argv[]) {
 
     exec_time = -omp_get_wtime();
 
-    Tour BestTour = Parallel_tsp_bb(Distances, num_cities, max_value, neighbors);
+    Tour best_tour = Parallel_tsp_bb(Distances, num_cities, max_value, neighbors);
     
     exec_time += omp_get_wtime();
 
     fprintf(stderr, "%lfs\n", exec_time);
 
+    best_tour.tour.shrink_to_fit();
     //No solution that has a better value than the max admited
-    if (BestTour.cost > max_value){
+    if (best_tour.cost > max_value){
         std::cout << "NO SOLUTION";
     }
     //This means the graph is disconnected
-    else if (BestTour.tour.size() != num_cities +1){
+    else if (best_tour.tour.size() != num_cities +1){
         printf("NO SOLUTION");
     }
     //Valid solution
     else{
-        std::cout << BestTour.cost << std::endl;
-        std::cout << "Tour: {";
+        std::cout << best_tour.cost << std::endl;
 
-        for (int i : BestTour.tour) {
-            std::cout << i << " ";
+        for (int i = 0; i<best_tour.tour.size(); i++) {
+            std::cout << best_tour.tour[i] << " ";
         }
-        std::cout << "}" << std::endl;
+        std::cout << std::endl;
     }
 
     return 0;

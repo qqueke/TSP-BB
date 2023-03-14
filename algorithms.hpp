@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 #include <unordered_set>
 #include <vector>
 

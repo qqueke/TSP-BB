@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O3
+CFLAGS = -g -O3
 SRC = tsp.cpp tsp-omp.cpp
 OBJ = $(SRC:.cpp=.o)
 LIBS = algorithms.o # Add algorithms.o as a dependency
@@ -19,7 +19,7 @@ tsp-omp.o: tsp-omp.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) -fopenmp -c -o $@ $<
 
 algorithms.o: algorithms.cpp # Add a rule to compile algorithms.cpp to algorithms.o
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+	$(CC) $(CFLAGS) $(INCLUDES) -fopenmp -c -o $@ $<
 
 .PHONY: all
 
