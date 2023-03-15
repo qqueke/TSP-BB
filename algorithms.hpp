@@ -22,7 +22,7 @@ typedef struct Tour{
 
 void print_tour(const Tour& tour);
 
-double Serial_compute_lbound(const std::vector<std::vector<double>> &distances, const std::vector<std::vector<double>> &min, int f, int t, double LB);
+double Serial_compute_lbound(const double distance, const std::vector<std::vector<double>> &min, int f, int t, double LB);
 
 double Serial_first_lbound(const std::vector<std::vector<double>> &distances, std::vector<std::vector<double>> &min);
 
