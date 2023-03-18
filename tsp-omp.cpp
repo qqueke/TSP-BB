@@ -8,6 +8,7 @@
 #include <climits>
 #include <algorithm>
 #include <cfloat>
+#include <cmath>
 #include "queue.hpp"
 #include "algorithms.hpp"
 
@@ -34,6 +35,10 @@ int main(int argc, char *argv[]) {
         std::cout << "Error";
         return 1;
     }
+
+    double aux = ((num_roads/num_cities)+1)*2;
+    int slices = static_cast<int>(std::ceil(aux));
+    std::cout << "Number of slices: " << slices << std::endl;
 
     std::vector<std::vector<double>> Distances (num_cities, std::vector<double>(num_cities));
     std::vector<std::vector<int>> neighbors(num_cities);
@@ -62,7 +67,7 @@ int main(int argc, char *argv[]) {
 
     exec_time = -omp_get_wtime();
 
-    Tour best_tour = Parallel2_tsp_bb(Distances, num_cities, max_value, neighbors);
+    Tour best_tour = Parallel2_tsp_bb(Distances, num_cities, max_value, neighbors, slices);
     
     exec_time += omp_get_wtime();
 

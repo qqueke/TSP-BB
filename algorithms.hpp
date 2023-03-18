@@ -32,6 +32,6 @@ Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, dou
 
 Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors);
 
-Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors);
+Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors, int slices);
 
 Tour Parallel3_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors);

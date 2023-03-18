@@ -323,7 +323,7 @@ Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, d
     return best_tour;
 }
 
-Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value, const std::vector<std::vector<int>> &neighbors){
+Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value, const std::vector<std::vector<int>> &neighbors, int slices){
         //Dynamic schedule alone improved alot 90s to 70s
     //Chunk size did not help
     int neighbor;
@@ -340,15 +340,14 @@ Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, 
     //--------------------------------------------------------------------------------------
     std::vector<std::vector<Tour>> queues_aux(neighbors[0].size());
     int counter=0;
-    int slices;
 
     double lowerbound;
 
     #pragma omp parallel
     {
         //omp_get_max_threads();
-        slices = omp_get_num_threads()/2;
-        std::cout << "Number of slices: " << slices << std::endl;
+        //slices = omp_get_num_threads()/2;
+        
 
         tour.bound = Parallel_first_lbound(distances, min);
 
