@@ -35,6 +35,8 @@ int main(int argc, char *argv[]) {
         std::cout << "Error";
         return 1;
     }
+    int slices = (1+ num_roads/num_cities)*2;
+
 
     std::vector<std::vector<double>> Distances (num_cities, std::vector<double>(num_cities));
     std::vector<std::vector<int>> neighbors(num_cities);
@@ -90,3 +92,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
