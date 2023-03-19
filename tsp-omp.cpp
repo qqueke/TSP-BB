@@ -14,8 +14,8 @@
 
 
 int main(int argc, char *argv[]) {
-    double exec_time;
-
+    int num_threads;
+    int layer_cap;
     if (argc != 3) {
         std::cout << "Usage: tsp <cities file> <max-value>\n";
         return 1;
@@ -63,9 +63,27 @@ int main(int argc, char *argv[]) {
 
     fclose(fp);
 
-    exec_time = -omp_get_wtime();
+    char* num_threads_str = std::getenv("OMP_NUM_THREADS");
+    if (num_threads_str != nullptr) {
+        num_threads = std::atoi(num_threads_str);
+    } else {
+        num_threads = omp_get_max_threads();
+    }
 
-    Tour best_tour = Parallel2_tsp_bb(Distances, num_cities, max_value, neighbors);
+    if (num_threads <= 5){
+        layer_cap = 1;
+    }
+    else if (num_threads <= 12){
+        layer_cap = 2;
+    }
+    else if (num_threads <= 16){
+        layer_cap = 3;
+    }
+
+
+    double exec_time = -omp_get_wtime();
+
+    Tour best_tour = Parallel2_tsp_bb(Distances, num_cities, max_value, neighbors, layer_cap);
     
     exec_time += omp_get_wtime();
 
