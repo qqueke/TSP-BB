@@ -344,24 +344,25 @@ Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, 
 
     double lowerbound;
 
-
     tour.tour.push_back(0); 
     tour.cost = 0; 
     best_tour.tour.push_back(0);
     best_tour.cost = max_value;
-    tour.bound = Parallel_first_lbound(distances, min);
+    //tour.bound = Parallel_first_lbound(distances, min);
 
+    omp_set_num_threads(2);
 
     #pragma omp parallel shared(lowerbound)
     {
-        layer_cap = omp_get_max_threads()/4;
+        layer_cap = omp_get_num_threads()/4;
         
-        /*double private_lb = 0;
+        //layer_cap =2;
+
+        double private_lb = 0;   
         double min1;
         double min2;
-        
 
-        #pragma omp for  private(min1, min2) schedule(dynamic) nowait
+        #pragma omp for schedule(dynamic)
         for (int row = 0; row < distances.size(); row++) {
             min1 = INT_MAX;
             min2 = INT_MAX;
@@ -383,26 +384,28 @@ Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, 
             private_lb += min1 + min2;
         }
 
-
         #pragma omp atomic
         lowerbound += private_lb;
         
+        #pragma omp barrier
+
         #pragma omp single
         {
             tour.bound = lowerbound/2;
             best_tour.cost = max_value;
+
             std::cout << "Tour.bound =" << tour.bound << "Best.cost ="<< best_tour.cost<<std::endl;
+            
             if (tour.bound >= best_tour.cost){
                 omp_set_num_threads(0); 
             }
 
-            
             std::cout << "layer_cap=" << layer_cap << std::endl;
 
-            tour.tour.push_back(0); 
-            tour.cost = 0; 
-            best_tour.tour.push_back(0);
-        }*/
+            //tour.tour.push_back(0); 
+            //tour.cost = 0; 
+            //best_tour.tour.push_back(0);
+        }
 
         #pragma omp for private(new_tour, distance, neighbor) schedule(dynamic)
         for (int v = 0; v < neighbors[0].size(); v++){
