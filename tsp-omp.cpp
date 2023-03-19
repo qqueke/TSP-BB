@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 
     double aux = ((num_roads/num_cities)+1)*2;
     int slices = static_cast<int>(std::ceil(aux));
-    std::cout << "Number of slices: " << slices << std::endl;
+    
 
     std::vector<std::vector<double>> Distances (num_cities, std::vector<double>(num_cities));
     std::vector<std::vector<int>> neighbors(num_cities);
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
     exec_time = -omp_get_wtime();
 
-    Tour best_tour = Parallel2_tsp_bb(Distances, num_cities, max_value, neighbors, slices);
+    Tour best_tour = Parallel3_tsp_bb(Distances, num_cities, max_value, neighbors, slices);
     
     exec_time += omp_get_wtime();
 
