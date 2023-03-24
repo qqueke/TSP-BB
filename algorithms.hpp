@@ -20,18 +20,10 @@ typedef struct Tour{
     }
 }Tour;
 
-void print_tour(const Tour& tour);
-
 double Serial_compute_lbound(const double distance, const std::vector<std::vector<double>> &min, int f, int t, double LB);
 
 double Serial_first_lbound(const std::vector<std::vector<double>> &distances, std::vector<std::vector<double>> &min);
 
-double Parallel_first_lbound(const std::vector<std::vector<double>> &distances, std::vector<std::vector<double>> &min);
-
 Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors);
 
-Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors);
-
-Tour Parallel2_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors, const int layer_cap);
-
-Tour Parallel3_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors, int slices);
+Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double BestTourCost, const std::vector<std::vector<int>> &neighbors, const int layer_cap);

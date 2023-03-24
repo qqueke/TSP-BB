@@ -69,21 +69,22 @@ int main(int argc, char *argv[]) {
     } else {
         num_threads = omp_get_max_threads();
     }
+    std::cout << num_threads << std::endl;
 
     if (num_threads <= 5){
         layer_cap = 1;
     }
-    else if (num_threads <= 12){
+    else if (num_threads < 14){
         layer_cap = 2;
     }
-    else if (num_threads <= 16){
+    else{
         layer_cap = 3;
     }
 
 
     double exec_time = -omp_get_wtime();
 
-    Tour best_tour = Parallel2_tsp_bb(Distances, num_cities, max_value, neighbors, layer_cap);
+    Tour best_tour = Parallel_tsp_bb(Distances, num_cities, max_value, neighbors, layer_cap);
     
     exec_time += omp_get_wtime();
 
