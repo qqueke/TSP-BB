@@ -40,13 +40,13 @@ int main(int argc, char *argv[]) {
     int slices = (1+ num_roads/num_cities)*2;
 
 
-    std::vector<std::vector<double>> Distances (num_cities, std::vector<double>(num_cities));
+    std::vector<std::vector<double>> distances (num_cities, std::vector<double>(num_cities));
     std::vector<std::vector<int>> neighbors(num_cities);
 
 
     for (int row = 0; row < num_cities; row++) {
         for (int column = 0; column < num_cities; column++) {
-            Distances[row][column] = INT_MAX;
+            distances[row][column] = INT_MAX;
         }
     }
 
@@ -57,8 +57,8 @@ int main(int argc, char *argv[]) {
             std::cout << "Error";
             return 1;
         }
-        Distances[city1][city2] = distance;
-        Distances[city2][city1] = distance;
+        distances[city1][city2] = distance;
+        distances[city2][city1] = distance;
         neighbors[city1].push_back(city2);
         neighbors[city2].push_back(city1);
     }
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     double exec_time = -omp_get_wtime();
 
-    Tour best_tour = Parallel_tsp_bb(Distances, num_cities, max_value, neighbors, layer_cap);
+    Tour best_tour = Parallel_MPI_tsp_bb(MPI_COMM_WORLD, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
     
     exec_time += omp_get_wtime();
     MPI_Finalize ()
