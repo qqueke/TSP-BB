@@ -9,11 +9,13 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <mpi.h>
 #include "queue.hpp"
 #include "algorithms.hpp"
 
 
 int main(int argc, char *argv[]) {
+    int node_id, num_nodes;
     int num_threads;
     int layer_cap;
     if (argc != 3) {
@@ -80,13 +82,16 @@ int main(int argc, char *argv[]) {
         layer_cap = 3;
     }
 
+    MPI_Init (&argc, &argv);
+    MPI_Comm_rank (MPI_COMM_WORLD, &node_id);
+    MPI_Comm_size (MPI_COMM_WORLD, &num_nodes);
 
     double exec_time = -omp_get_wtime();
 
     Tour best_tour = Parallel_tsp_bb(Distances, num_cities, max_value, neighbors, layer_cap);
     
     exec_time += omp_get_wtime();
-
+    MPI_Finalize ()
     fprintf(stderr, "%lfs\n", exec_time);
 
     best_tour.tour.shrink_to_fit();

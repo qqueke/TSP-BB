@@ -326,3 +326,252 @@ Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, d
     }
     return best_tour;
 }
+
+Tour Parallel_MPI_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value, const std::vector<std::vector<int>> &neighbors, const int layer_cap){
+
+    //---------------------------------Private variables -----------------------------------
+    int neighbor;
+    double distance;
+    
+    //---------------------------------Shared variables -----------------------------------
+
+    std::vector<std::vector<double>> min (N, std::vector<double>(2));
+    
+    std::vector<PriorityQueue<Tour>> queues;
+
+    Tour tour, best_tour, new_tour;
+
+    std::vector<std::vector<Tour>> tour_matrix(layer_cap + 1);
+
+    double lowerbound;
+
+    //--------------------------------------------------------------------------------------
+
+    tour.tour.push_back(0); 
+    tour.cost = 0; 
+    best_tour.tour.push_back(0);
+    best_tour.cost = max_value;
+
+    #pragma omp parallel shared(lowerbound)
+    {
+        double private_lb = 0;   
+        double min1;
+        double min2;
+
+        #pragma omp for schedule(static) nowait
+        for (int row = 0; row < distances.size(); row++) {
+            min1 = INT_MAX;
+            min2 = INT_MAX;
+
+            for (int column = 0; column < distances[row].size(); column++) {
+                double distance = distances[row][column];
+
+                if (distance < min1) {
+                    min2 = min1;
+                    min1 = distance;
+                }
+                else if (distance >= min1 && distance < min2) {
+                    min2 = distance;
+                }
+            }
+            min[row][0] = min1;
+            min[row][1] = min2;
+
+            private_lb += min1 + min2;
+        }
+
+        #pragma omp atomic
+        lowerbound += private_lb;
+        
+        #pragma omp barrier
+        #pragma omp single
+        {
+            tour.bound = lowerbound/2;
+        
+            if (tour.bound >= best_tour.cost){
+                omp_set_num_threads(0); 
+            }
+        }
+
+        #pragma omp for private(new_tour, distance, neighbor) schedule(static)
+        for (int v = 0; v < neighbors[0].size(); v++){
+            neighbor = neighbors[0][v];
+
+            distance = distances[0][neighbor];
+            new_tour.bound = Serial_compute_lbound(distance, min, 0, neighbor, tour.bound);
+            
+            if (new_tour.bound > max_value){ 
+                continue;
+            }
+
+            new_tour.tour = tour.tour;
+            new_tour.tour.push_back(neighbor); 
+            new_tour.cost = tour.cost + distance;
+            
+            #pragma omp critical
+            tour_matrix[0].push_back(new_tour);
+            
+        }
+
+
+        for (int layer = 0; layer < layer_cap; layer ++){
+            #pragma omp for private(new_tour, distance, neighbor) schedule(dynamic)
+            for (int i= 0; i < tour_matrix[layer].size(); i++){
+                for (int v = 0; v < neighbors[tour_matrix[layer][i].tour.back()].size(); v++){
+                    
+                    neighbor = neighbors[tour_matrix[layer][i].tour.back()][v];
+
+                    if (std::find(tour_matrix[layer][i].tour.begin(), tour_matrix[layer][i].tour.end(), neighbor) != tour_matrix[layer][i].tour.end()) {
+                        continue;
+                    }
+
+                    distance = distances[tour_matrix[layer][i].tour.back()][neighbor];
+                    new_tour.bound = Serial_compute_lbound(distance, min, tour_matrix[layer][i].tour.back(), neighbor, tour_matrix[layer][i].bound);
+                    
+                    if (new_tour.bound > max_value){ 
+                        continue;
+                    }
+
+                    new_tour.tour = tour_matrix[layer][i].tour;
+                    new_tour.tour.push_back(neighbor); 
+                    new_tour.cost = tour_matrix[layer][i].cost + distance;
+                    
+                    #pragma omp critical
+                    tour_matrix[layer+1].push_back(new_tour);
+
+                }
+            }
+        }
+        
+
+        #pragma omp for private(new_tour, distance, neighbor) schedule(dynamic)
+        for (int i = 0; i <  tour_matrix[tour_matrix.size()-1].size(); i++){
+            for (int v = 0; v < neighbors[tour_matrix[tour_matrix.size()-1][i].tour.back()].size(); v++){
+                
+                neighbor = neighbors[tour_matrix[tour_matrix.size()-1][i].tour.back()][v];
+
+                if (std::find(tour_matrix[tour_matrix.size()-1][i].tour.begin(), tour_matrix[tour_matrix.size()-1][i].tour.end(), neighbor) != tour_matrix[tour_matrix.size()-1][i].tour.end()) {
+                    continue;
+                }
+
+                distance = distances[tour_matrix[tour_matrix.size()-1][i].tour.back()][neighbor];
+                new_tour.bound = Serial_compute_lbound(distance, min, tour_matrix[tour_matrix.size()-1][i].tour.back(), neighbor, tour_matrix[tour_matrix.size()-1][i].bound);
+                
+                if (new_tour.bound > max_value){ 
+                    continue;
+                }
+
+                new_tour.tour = tour_matrix[tour_matrix.size()-1][i].tour;
+
+                new_tour.tour.push_back(neighbor); 
+                new_tour.cost = tour_matrix[tour_matrix.size()-1][i].cost + distance;
+                
+                PriorityQueue<Tour> queue;
+                queue.push(new_tour);
+
+                #pragma omp critical
+                queues.push_back(queue);
+            }
+        }
+
+        #pragma omp single
+        std::sort(queues.begin(), queues.end(), cmp);
+
+        #pragma omp for private(tour, new_tour, distance, neighbor) schedule(dynamic) nowait
+        for (int i = 0; i < queues.size(); i++){
+            while (!queues[i].empty()){ 
+                tour = queues[i].pop(); 
+                
+                if (tour.bound >= best_tour.cost){
+                    break;
+                }
+
+                if (tour.tour.size() == N){
+                    distance = distances[0][tour.tour.back()];
+                    #pragma omp critical
+                    { 
+                        if (tour.cost + distance < best_tour.cost){
+                                best_tour.cost = tour.cost + distance;
+                                best_tour.tour = tour.tour; 
+                                best_tour.tour.push_back(0); 
+                        }
+                    }
+                }
+                else{
+                    for (int v = 0; v < neighbors[tour.tour.back()].size(); v++){
+                        neighbor = neighbors[tour.tour.back()][v];
+
+                        if (std::find(tour.tour.begin(), tour.tour.end(), neighbor) != tour.tour.end()) {
+                            continue;
+                        }
+
+                        distance = distances[tour.tour.back()][neighbor];
+                        new_tour.bound = Serial_compute_lbound(distance, min, tour.tour.back(), neighbor, tour.bound);
+                        
+                        if (new_tour.bound > best_tour.cost){ 
+                            continue;
+                        }
+
+                        new_tour.tour = tour.tour;
+                        new_tour.tour.push_back(neighbor); 
+                        new_tour.cost = tour.cost + distances[tour.tour.back()][neighbor];
+
+                        queues[i].push(new_tour);
+                    }  
+                }
+            }   
+        } 
+    }
+    return best_tour;
+}
+
+/*
+MPI_Datatype tour_type;
+MPI_Datatype int_type, double_type;
+MPI_Type_contiguous(sizeof(int), MPI_BYTE, &int_type);
+MPI_Type_contiguous(sizeof(double), MPI_BYTE, &double_type);
+
+int block_lengths[3] = {0, 0, 0};
+MPI_Aint offsets[3];
+Tour tour;
+
+// Define the offsets for each member of the struct
+MPI_Get_address(&tour.tour[0], &offsets[0]);
+MPI_Get_address(&tour.cost, &offsets[1]);
+MPI_Get_address(&tour.bound, &offsets[2]);
+
+// Compute the relative offsets of the members
+offsets[1] -= offsets[0];
+offsets[2] -= offsets[0];
+offsets[0] = 0;
+
+// Set the block lengths for each member of the struct
+block_lengths[0] = tour.tour.size();
+block_lengths[1] = 1;
+block_lengths[2] = 1;
+
+// Create a contiguous data type for the vector<int> member
+MPI_Datatype vector_type;
+MPI_Type_contiguous(tour.tour.size(), int_type, &vector_type);
+
+// Define the types for each member of the struct
+MPI_Datatype types[3] = {vector_type, double_type, double_type};
+
+// Create the struct data type
+MPI_Type_create_struct(3, block_lengths, offsets, types, &tour_type);
+
+// Commit the struct data type
+MPI_Type_commit(&tour_type);
+
+
+
+
+
+
+
+
+
+
+
+
+*/
