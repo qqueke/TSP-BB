@@ -113,7 +113,6 @@ Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, dou
                     continue;
                 }
 
-               
                 new_tour.bound = Serial_compute_lbound(dist, min, tour.tour.back(), neighbor, tour.bound);
                 
                 if (new_tour.bound > best_tour.cost){ 
@@ -326,5 +325,3 @@ Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, d
     }
     return best_tour;
 }
-
-

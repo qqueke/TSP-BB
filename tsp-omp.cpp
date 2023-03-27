@@ -14,8 +14,11 @@
 
 
 int main(int argc, char *argv[]) {
+    Tour best_tour;
+    double exec_time;
     int num_threads;
     int layer_cap;
+
     if (argc != 3) {
         std::cout << "Usage: tsp <cities file> <max-value>\n";
         return 1;
@@ -80,12 +83,20 @@ int main(int argc, char *argv[]) {
         layer_cap = 3;
     }
 
+    if (num_threads == 1){
+        exec_time = -omp_get_wtime();
 
-    double exec_time = -omp_get_wtime();
+        best_tour = Serial_tsp_bb(Distances, num_cities, max_value, neighbors);
+        
+        exec_time += omp_get_wtime();
+    }
+    else{
+        exec_time = -omp_get_wtime();
 
-    Tour best_tour = Parallel_tsp_bb(Distances, num_cities, max_value, neighbors, layer_cap);
-    
-    exec_time += omp_get_wtime();
+        best_tour = Parallel_tsp_bb(Distances, num_cities, max_value, neighbors, layer_cap);
+        
+        exec_time += omp_get_wtime();
+    }
 
     fprintf(stderr, "%lfs\n", exec_time);
 
@@ -110,4 +121,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-

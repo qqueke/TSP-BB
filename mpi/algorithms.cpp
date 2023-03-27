@@ -569,9 +569,15 @@ Tour Parallel_MPI_tsp_bb(const MPI_Comm comm, const int num_nodes, const int nod
     best_tour.cost = costs[index];
     best_tour.tour = tours[index];
 
-    MPI_Scatter(&best_tour.cost, 1, MPI_DOUBLE, &best_tour.cost, 1, MPI_DOUBLE, 0, comm);
-    MPI_Scatter(&best_tour.tour, N+1, MPI_INT, &best_tour.tour, N+1, MPI_DOUBLE, 0, comm);
+    MPI_Scatter(&best_tour.cost, 1, MPI_DOUBLE, &mpi_cost, 1, MPI_DOUBLE, 0, comm);
+    MPI_Scatter(&best_tour.tour, N+1, MPI_INT, &mpi_tour, N+1, MPI_DOUBLE, 0, comm);
     
+    if (node_id != 0){
+        best_tour.tour = mpi_tour;
+        best_tour.cost = mpi_cost;
+    }
+
+
     //Who needs to have the last input????
     return best_tour;
 }

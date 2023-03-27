@@ -91,9 +91,11 @@ int main(int argc, char *argv[]) {
     Tour best_tour = Parallel_MPI_tsp_bb(MPI_COMM_WORLD, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
     
     exec_time += omp_get_wtime();
-    MPI_Finalize ()
+    
     fprintf(stderr, "%lfs\n", exec_time);
-
+    MPI_Finalize ();
+    
+    
     best_tour.tour.shrink_to_fit();
     //No solution that has a better value than the max admited
     if (best_tour.cost > max_value){
