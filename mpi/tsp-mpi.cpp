@@ -15,6 +15,8 @@
 
 
 int main(int argc, char *argv[]) {
+    double exec_time;
+    Tour best_tour;
     int node_id, num_nodes;
     int num_threads;
     int layer_cap;
@@ -81,40 +83,45 @@ int main(int argc, char *argv[]) {
     else{
         layer_cap = 3;
     }
+    //Ajustar isto
+    layer_cap = 2;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &node_id);
     MPI_Comm_size (MPI_COMM_WORLD, &num_nodes);
+    MPI_Comm comm = MPI_COMM_WORLD;
 
-    double exec_time = -omp_get_wtime();
+    exec_time = -omp_get_wtime();
 
-    Tour best_tour = Parallel_MPI_tsp_bb(MPI_COMM_WORLD, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
-    
+    //best_tour = Parallel_MPI_tsp_bb(comm, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
+    best_tour = Serial_MPI_tsp_bb(comm, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
     exec_time += omp_get_wtime();
     
-    fprintf(stderr, "%lfs\n", exec_time);
-    MPI_Finalize ();
     
-    
-    best_tour.tour.shrink_to_fit();
-    //No solution that has a better value than the max admited
-    if (best_tour.cost > max_value){
-        std::cout << "NO SOLUTION";
-    }
-    //This means the graph is disconnected
-    else if (best_tour.tour.size() != num_cities +1){
-        printf("NO SOLUTION");
-    }
-    //Valid solution
-    else{
-        std::cout << best_tour.cost << std::endl;
 
-        for (int i = 0; i<best_tour.tour.size(); i++) {
-            std::cout << best_tour.tour[i] << " ";
+    //best_tour.tour.shrink_to_fit();
+    if (node_id == 0){
+        fprintf(stderr, "%lfs\n", exec_time);
+        //No solution that has a better value than the max admited
+        if (best_tour.cost > max_value){
+            std::cout << "NO SOLUTION";
         }
-        std::cout << std::endl;
+        //This means the graph is disconnected
+        else if (best_tour.tour.size() != num_cities +1){
+            printf("NO SOLUTION");
+        }
+        //Valid solution
+        else{
+            std::cout << best_tour.cost << std::endl;
+
+            for (int i = 0; i<num_cities +1; i++) {
+                std::cout << best_tour.tour[i] << " ";
+            }
+            std::cout << std::endl;
+        }
     }
 
+    MPI_Finalize ();
     return 0;
 }
 
