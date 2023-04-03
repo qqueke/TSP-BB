@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
         layer_cap = 3;
     }
     //Ajustar isto
-    layer_cap = 2;
+    layer_cap = 1;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &node_id);

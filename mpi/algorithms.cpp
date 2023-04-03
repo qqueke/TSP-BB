@@ -529,19 +529,20 @@ Tour Parallel_MPI_tsp_bb(const MPI_Comm comm, const int num_nodes, const int nod
                         }
                     }
                 }
-
-                if (claimed != 1){
-                    for (int j = 0; j < num_nodes; j++) {
-                        if (j != node_id) {
-                            MPI_Request r;
-                            MPI_Isend(&i, 1, MPI_INT, j, i, comm, &r);
-                        }
-                    }
-                }
             }
 
             if (claimed) {
                 continue;
+            }
+
+            #pragma omp critical
+            {
+                for (int j = 0; j < num_nodes; j++) {
+                    if (j != node_id) {
+                        MPI_Request r;
+                        MPI_Isend(&i, 1, MPI_INT, j, i, comm, &r);
+                    }
+                }
             }
 
             while (!queues[i].empty()){
@@ -799,17 +800,15 @@ Tour Serial_MPI_tsp_bb(const MPI_Comm comm, const int num_nodes, const int node_
             }
         }
 
-        if (claimed != 1){
-            for (int j = 0; j < num_nodes; j++) {
-                if (j != node_id) {
-                    MPI_Request r;
-                    MPI_Isend(&i, 1, MPI_INT, j, i, comm, &r);
-                }
-            }
-        }
-        
         if (claimed) {
             continue;
+        }
+
+        for (int j = 0; j < num_nodes; j++) {
+            if (j != node_id) {
+                MPI_Request r;
+                MPI_Isend(&i, 1, MPI_INT, j, i, comm, &r);
+            }
         }
 
         while (!queues[i].empty()){
@@ -817,7 +816,7 @@ Tour Serial_MPI_tsp_bb(const MPI_Comm comm, const int num_nodes, const int node_
             iterations++;
             if (iterations > 5){
                 if (flag){
-                    MPI_Iallreduce(&best_tour.cost, &best_cost, 1, MPI_DOUBLE, MPI_MIN, comm, &request);
+                    MPI_Iallreduce(&best_tour_cost, &best_cost, 1, MPI_DOUBLE, MPI_MIN, comm, &request);
                     flag = 0;
                 }
 
@@ -868,8 +867,8 @@ Tour Serial_MPI_tsp_bb(const MPI_Comm comm, const int num_nodes, const int node_
     
 
     exec_time += MPI_Wtime();
-    /*std::cout << "Node "<< node_id << " finished in " << exec_time << "s and path:"<< std::endl;
-    std::cout << best_tour.cost << std::endl;
+    std::cout << "Node "<< node_id << " finished in " << exec_time << "s and path cost:"<< best_tour.cost <<std::endl;
+    /*std::cout << best_tour.cost << std::endl;
 
     for (int i = 0; i<N +1; i++) {
         std::cout << best_tour.tour[i] << " ";
@@ -890,7 +889,7 @@ Tour Serial_MPI_tsp_bb(const MPI_Comm comm, const int num_nodes, const int node_
             }
         }
 
-        /*int counter = 0;
+        int counter = 0;
         for (int i = 0; i < num_nodes*(N+1); i++){
             if (counter == 0){
                 std::cout << "New path: " << std::endl;
@@ -909,7 +908,7 @@ Tour Serial_MPI_tsp_bb(const MPI_Comm comm, const int num_nodes, const int node_
 
         }
 
-        std::cout << "\nIndex for the best path: " << index << std::endl;*/
+        std::cout << "\nIndex for the best path: " << index << std::endl;
         
         best_tour.cost = costs[index];
         best_tour.tour.clear();
