@@ -91,16 +91,83 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size (MPI_COMM_WORLD, &num_nodes);
     MPI_Comm comm = MPI_COMM_WORLD;
 
-    exec_time = -omp_get_wtime();
-
+    exec_time = -MPI_Wtime();
     //best_tour = Parallel_MPI_tsp_bb(comm, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
     best_tour = Serial_MPI_tsp_bb(comm, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
-    exec_time += omp_get_wtime();
+    //exec_time += MPI_Wtime();
+    MPI_Barrier(MPI_COMM_WORLD);
+    exec_time += MPI_Wtime();
     
+    /*int index = num_nodes;
+	std::vector<double> costs(num_nodes); 
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	    
+    MPI_Gather(&best_tour.cost, 1, MPI_DOUBLE, &costs[0], 1, MPI_DOUBLE, 0, comm);
+    if (node_id == 0){
+        int minimum = INT_MAX;
+        
+        for (int i = 0; i < costs.size(); i++){
+            if (costs[i] < minimum){
+                minimum = costs[i];
+                index = i;
+            }
+        }
+    }
     
+    MPI_Bcast(&index, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    */
+    std::vector<double> costs(num_nodes);    
+    std::vector<int> tours(num_nodes*(num_cities+1));
+
+    /*MPI_Gather(&best_tour.cost, 1, MPI_DOUBLE, &costs[0], 1, MPI_DOUBLE, 0, comm);
+    MPI_Gather(&best_tour.tour[0], num_cities+1 , MPI_INT, &tours[0], num_cities+1 , MPI_INT, 0, comm);
+
+
+    if (node_id == 0){
+        int minimum = INT_MAX;
+        int index;
+        for (int i = 0; i < costs.size(); i++){
+            if (costs[i] < minimum){
+                minimum = costs[i];
+                index = i;
+            }
+        }
+
+        int counter = 0;
+        for (int i = 0; i < num_nodes*(N+1); i++){
+            if (counter == 0){
+                std::cout << "New path: " << std::endl;
+                std::cout << tours[i] << " ";
+                counter++;
+            }
+            else if (counter < N +1 ){
+                std::cout << tours[i] << " ";
+                counter++;
+            }
+            else{
+                std::cout << "\nNew path: " << std::endl;
+                std::cout << tours[i] << " ";
+                counter = 1;
+            }
+        }
+        std::cout << "\nIndex for the best path: " << index << std::endl;
+        
+        best_tour.cost = costs[index];
+        best_tour.tour.clear();
+        best_tour.tour.resize(num_cities+1);
+ 
+        int ind = 0;
+        for (int i = index * (num_cities+1); i < (index +1) * (num_cities+1); i++){
+            best_tour.tour[ind] = tours[i];
+            ind++;
+        }
+    }*/
+
+
 
     //best_tour.tour.shrink_to_fit();
-    if (node_id == 0){
+    if (best_tour.cost < max_value){
         fprintf(stderr, "%lfs\n", exec_time);
         //No solution that has a better value than the max admited
         if (best_tour.cost > max_value){
@@ -124,4 +191,6 @@ int main(int argc, char *argv[]) {
     MPI_Finalize ();
     return 0;
 }
+
+
 
