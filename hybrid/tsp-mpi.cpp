@@ -74,13 +74,25 @@ int main(int argc, char *argv[]) {
         num_threads = omp_get_max_threads();
     }
 
-    MPI_Init (&argc, &argv);
+    int provided, required = MPI_THREAD_FUNNELED;
+    //int provided, required = MPI_THREAD_MULTIPLE;
+    //int provided, required = MPI_THREAD_SERIALIZED;
+    MPI_Init_thread(&argc, &argv, required, &provided);
+    if (provided < required) {
+        printf("Error: MPI does not support required threading level.\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }    
+
+    //MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &node_id);
     MPI_Comm_size (MPI_COMM_WORLD, &num_nodes);
     MPI_Comm comm = MPI_COMM_WORLD;
-        
+    
+    
+
+    
     struct {
-        double cost;
+        double value;
         int index;
     } my_result, global_result;
 
@@ -91,13 +103,14 @@ int main(int argc, char *argv[]) {
         layer_cap = 3;
     }
     else {
-    	layer_cap = 3;
+    	layer_cap = 4;
     }
 
-    exec_time = -MPI_Wtime();
-    best_tour = Serial_MPI_tsp_bb(comm, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
 
-    my_result.cost = best_tour.cost;
+    exec_time = -MPI_Wtime();
+    best_tour = Parallel_MPI_tsp_bb(comm, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
+
+    my_result.value = best_tour.cost;
     my_result.index = node_id;
 
     // Reduce the results from all processes
@@ -105,6 +118,8 @@ int main(int argc, char *argv[]) {
 
     exec_time += MPI_Wtime();
 
+    //std::cout << "Index: " << global_result.index << std::endl;
+        //std::cout << "Result: " << global_result.value << std::endl;
 
     if (node_id == global_result.index){
         if (best_tour.cost < max_value){
