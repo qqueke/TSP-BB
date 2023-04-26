@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
         layer_cap = 3;
     }
     else {
-    	layer_cap = 4;
+    	layer_cap = 3;
     }
 
 
