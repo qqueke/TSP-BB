@@ -71,6 +71,7 @@ double Serial_first_lbound(const std::vector<std::vector<double>> &distances, st
     return lowerbound / 2;
 }
 
+
 Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value, const std::vector<std::vector<int>> &neighbors){
     int neighbor;
     double dist;
@@ -128,6 +129,7 @@ Tour Serial_tsp_bb(const std::vector<std::vector<double>>& distances, int N, dou
     }
     return best_tour;
 }
+
 
 Tour Parallel_tsp_bb(const std::vector<std::vector<double>>& distances, int N, double max_value, const std::vector<std::vector<int>> &neighbors, const int layer_cap){
     //---------------------------------Private variables -----------------------------------

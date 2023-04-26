@@ -1,0 +1,7 @@
+#!/bin/bash
+#SBATCH --job-name=----MPI
+#SBATCH --output=mpi.out
+#SBATCH --error=mpi.err
+#SBATCH --ntasks=8
+#SBATCH --cpus-per-task=1
+srun tsp-mpi pub-instances/gen30-5000.in 5000
