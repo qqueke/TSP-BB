@@ -76,14 +76,11 @@ int main(int argc, char *argv[]) {
     if (num_threads <= 5){
         layer_cap = 1;
     }
-    else if (num_threads < 14){
+    else{
         layer_cap = 2;
     }
-    else{
-        layer_cap = 3;
-    }
 
-    if (num_threads == 1){
+    if (num_threads == 1 || (layer_cap + 3) > num_cities){
         exec_time = -omp_get_wtime();
 
         best_tour = Serial_tsp_bb(Distances, num_cities, max_value, neighbors);
