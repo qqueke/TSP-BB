@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
         layer_cap = 2;
     }
 
+
     if (num_threads == 1 || (layer_cap + 3) > num_cities){
         exec_time = -omp_get_wtime();
 
