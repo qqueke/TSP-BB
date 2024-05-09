@@ -7,14 +7,21 @@ This project is an implementation of the Traveling Salesman Problem (TSP) using 
 - **MPI:** Distributed memory parallel implementation using MPI.
 - **Hybrid:** Combined parallel implementation using both OpenMP and MPI.
 
+## Requirements
+
+To compile and run this project, you will need:
+
+- MPI compiler
+- OpenMP  
+
 ## Compilation
 
 To compile the project, use `make` followed by the implementation you want to compile:
 
-- For Serial: `make serial`
-- For OpenMP: `make omp`
-- For MPI: `make mpi`
-- For Hybrid: `make hybrid`
+- For Serial: `make` inside `serial` directory
+- For OpenMP: `make` inside `omp` directory
+- For MPI: `make` inside `mpi` directory
+- For Hybrid: `make` inside `hybrid` directory
 
 ## Execution
 
