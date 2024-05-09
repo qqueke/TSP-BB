@@ -84,15 +84,11 @@ int main(int argc, char *argv[]) {
         int index;
     } my_result, global_result;
 
-    if (num_nodes <= 8){
+    if (num_nodes <= 8)
         layer_cap = 2;
-    }
-    else if (num_nodes <= 24){
+    
+    else 
         layer_cap = 3;
-    }
-    else {
-    	layer_cap = 3;
-    }
 
     exec_time = -MPI_Wtime();
     best_tour = Serial_MPI_tsp_bb(comm, num_nodes, node_id, distances, num_cities, max_value, neighbors, layer_cap);
